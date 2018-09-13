@@ -15,21 +15,26 @@ namespace Program
 
         static async Task MainAsync(string[] args)
         {
-            var config = JsonConvert.DeserializeObject<dynamic>(File.ReadAllText("env.json"));
+            var config = JsonConvert.DeserializeObject<AppConfig>(File.ReadAllText(".env"));
 
             Console.WriteLine(config);
 
-            var yodlee = new YodleeApi(
-                (string)config.cobrandName,
-                (string)config.cobrandLogin,
-                (string)config.cobrandPassword,
-                (string)config.userLogin,
-                (string)config.userPassword
-            );
+            var yodlee = new YodleeApi(config.CobrandName);
 
-            var response = await yodlee.Accounts();
+            yodlee.Debug = true;
 
-            Console.WriteLine(response.Json());
+            await yodlee.Login(config.CobrandLogin, config.CobrandPassword);
+
+            await yodlee.LoginUser(config.UserLogin, config.UserPassword);
+
+            var accounts = (await yodlee.Accounts()).Json();
+
+            var transactions = (await yodlee.Transactions(accounts[0].Id, new DateTime(2007, 1, 1), new DateTime(2018, 1, 1))).Json();
+
+
+
+
+            Console.WriteLine(JsonConvert.SerializeObject(transactions));
 
         }
     }
