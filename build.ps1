@@ -185,7 +185,7 @@ foreach($nuPackage in (Get-ChildItem -Path $OutputDirectory -Filter "*.nupkg" -R
     Remove-Item -Path $nuPackage.FullName -Force
 }
 
-$packCmd = "cd src/Yodlee && dotnet pack --version-suffix=pre-$VersionSuffix --verbosity=d --output=`"$outputPath`" --configuration=$BuildConfiguration /p:BuildNumber=$BuildNumber --no-build --no-restore"
+$packCmd = "dotnet pack src/Yodlee/Yodlee.csproj --version-suffix=pre-$VersionSuffix --verbosity=d --output=`"$outputPath`" --configuration=$BuildConfiguration /p:BuildNumber=$BuildNumber --no-build --no-restore"
 
 Invoke-ExpressionEx $packCmd
 
