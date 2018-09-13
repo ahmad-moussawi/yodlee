@@ -3,7 +3,6 @@
 .SYNOPSIS
 Yodlee build script
 
-
 .PARAMETER BuildNumber
 The number for this build
 
@@ -28,11 +27,21 @@ param(
     [switch] $SourceLinkEnable,
     [switch] $DebugBuild
 )
+
 $ErrorActionPreference = "Stop"
-$msgColor = @{Default="White"; Heading="Cyan"; Danger="Red"; Success="Green"; Attention="Yellow"}
+
+$msgColor = @{
+    Default="White";
+    Heading="Cyan";
+    Danger="Red";
+    Success="Green";
+    Attention="Yellow"
+}
+
 $BuildConfiguration = 'Release'
 
-function Die ($message) {
+function Die ($message)
+{
     Write-Host ">>> ERROR:`t$message`n" -ForegroundColor $msgColor.Danger
     Exit 1
 }
@@ -45,7 +54,11 @@ function isValidColor($color)
 function Msg ($message, $color = $msgColor.Default, $newLine=$true)
 {
     $valid = isValidColor($color)
-    if(!$valid) { $color = $msgColor.Default }
+
+    if(!$valid)
+    {
+        $color = $msgColor.Default
+    }
 
     if($newLine)
     {
@@ -66,22 +79,29 @@ function Done()
 function Invoke-ExpressionEx($expression) {
     try
     {
-        if($DebugBuild -eq $false) { Invoke-Expression $expression | Out-Null }
+        if($DebugBuild -eq $false)
+        {
+            Invoke-Expression $expression | Out-Null
+        }
         else
         {
             Msg "`tInvoking Expression: $expression" $msgColor.Default
             Invoke-Expression $expression
         }
+
         if (!$? -or $LastExitCode -ne 0)
         {
             throw "Non zero return code: $LastExitCode"
         }
-    } catch {
+    }
+    catch
+    {
         Die "Error encountered while invoking expression, aborting.`n`t`tExpression: `"$expression`"`n`t`tMessage: `"$PSItem`""
     }
 }
 
 Msg "`n>>> Build Script`n" $msgColor.Heading
+
 if($DebugBuild)
 {
     Msg "`tDEBUG BUILD" $msgColor.Attention
@@ -93,7 +113,7 @@ if($BuildNumber -eq 0 -and $PullRequestNumber -eq 0)
     Die "Build Number or Pull Request Number must be supplied"
 }
 
-if(!(Test-Path "version.props"))
+if( !(Test-Path "version.props") )
 {
     Die "Unable to locate required file: version.props"
 }
@@ -132,6 +152,7 @@ if($RunTests)
 {
     # Tests should really be in their own subfolder but oh well
     $testProjects = Get-ChildItem -Path $PSScriptRoot -Filter "*Tests.csproj" -Recurse
+
     Msg "`tTesting (found " $msgColor.Attention $false
     Msg ("{0}" -f $testProjects.Count) $msgColor.Attention $false
     Msg " test projects)" $msgColor.Attention
@@ -139,7 +160,9 @@ if($RunTests)
     foreach($testProject in  $testProjects)
     {
         Msg "`t`t- $testProject" $msgColor.Attention
+
         Invoke-ExpressionEx ("dotnet test /nologo -v d /p:Configuration=$BuildConfiguration --no-restore --no-build "+$testProject.FullName)
+
         Msg "`t`t`tOK" $msgColor.Success
     }
 }
@@ -151,18 +174,24 @@ if($PullRequestNumber -gt 0)
 }
 
 Msg "`tPackaging" $msgColor.Attention
-if(!(Test-Path $outputPath)) { Invoke-ExpressionEx "md $outputPath" }
+
+if(!(Test-Path $outputPath))
+{
+    Invoke-ExpressionEx "md $outputPath"
+}
+
 foreach($nuPackage in (Get-ChildItem -Path $OutputDirectory -Filter "*.nupkg" -Recurse))
 {
     Remove-Item -Path $nuPackage.FullName -Force
 }
 
-$packCmd = "dotnet pack --version-suffix=pre-$VersionSuffix --verbosity=d --output=`"$outputPath`" --configuration=$BuildConfiguration /p:BuildNumber=$BuildNumber --no-build --no-restore"
+$packCmd = "cd src/Yodlee && dotnet pack --version-suffix=pre-$VersionSuffix --verbosity=d --output=`"$outputPath`" --configuration=$BuildConfiguration /p:BuildNumber=$BuildNumber --no-build --no-restore"
+
 Invoke-ExpressionEx $packCmd
+
 foreach($nuPackage in (Get-ChildItem -Path $OutputDirectory -Filter "*.nupkg" -Recurse))
 {
     Msg "`t`t+ $nuPackage" $msgColor.Success
 }
-
 
 Done
