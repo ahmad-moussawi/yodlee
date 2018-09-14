@@ -243,6 +243,47 @@ namespace Yodlee
             return await yapi.Get<List<Transaction>>("transactions", query, config);
         }
 
+        public async Task<Response<User>> CreateUser(
+            string login,
+            string email,
+            string password
+        )
+        {
+
+            var data = new
+            {
+                userParam = new
+                {
+                    user = new
+                    {
+                        loginName = login,
+                        password = password,
+                        email = email,
+                    }
+                }
+            };
+
+            var config = new Config();
+
+            config.ResponseTransformers.Add(content => traverse(content, "user"));
+
+            var response = await yapi.Post<User>("user/register", data, config);
+
+            if (!response.IsSuccess)
+            {
+                throw new InvalidOperationException(
+                    "Failed to create user", new Exception(response.Raw())
+                );
+            }
+
+            userToken = new Token
+            {
+                Value = response.Json().Session.UserSession,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(USER_SESSION_DURATION)
+            };
+
+            return response;
+        }
 
         private object merge(object item1, object item2)
         {

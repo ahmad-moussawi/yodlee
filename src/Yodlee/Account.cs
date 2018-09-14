@@ -40,8 +40,4 @@ namespace Yodlee
         public Name Name { get; set; }
     }
 
-    public class Name
-    {
-        public string Fullname { get; set; }
-    }
 }
