@@ -243,6 +243,23 @@ namespace Yodlee
             return await yapi.Get<List<Transaction>>("transactions", query, config);
         }
 
+        public async Task<Response<dynamic>> AccessTokens(string appIds)
+        {
+            var config = new Config();
+
+            config.ResponseTransformers.Add(content =>
+            {
+                var ob = decode<dynamic>(content);
+                return encode(ob.user.accessTokens[0]);
+            });
+
+            return await yapi.Get<dynamic>("/user/accessTokens", new
+            {
+                appIds
+            }, config);
+
+        }
+
         public async Task<Response<User>> CreateUser(
             string login,
             string email,
