@@ -52,14 +52,13 @@ namespace Yodlee
             config.OnBeforeSend = async (req, c) =>
             {
 
+                if (new[] { "POST", "PUT" }.Contains(req.Method.ToString()))
+                {
+                    req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                }
+
                 if (Debug)
                 {
-
-                    if (new[] { "POST", "PUT" }.Contains(req.Method.ToString()))
-                    {
-                        req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                    }
-
                     Console.WriteLine($"{req.Method} {req.RequestUri}");
 
                     if (req.Headers != null)
