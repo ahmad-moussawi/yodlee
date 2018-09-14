@@ -43,6 +43,9 @@ namespace Yodlee
 
         public Client yapi;
         private readonly string cobrandName;
+        private readonly string cobrandLogin;
+        private readonly string cobrandPassword;
+
         public YodleeApi(string cobrandName)
         {
             this.cobrandName = cobrandName;
@@ -96,6 +99,15 @@ namespace Yodlee
 
         }
 
+        public YodleeApi(
+            string cobrandName,
+            string cobrandLogin,
+            string cobrandPassword
+        ) : this(cobrandName)
+        {
+            this.cobrandLogin = cobrandLogin;
+            this.cobrandPassword = cobrandPassword;
+        }
         public bool IsLogged()
         {
             return cobrandToken.IsValid;
@@ -106,8 +118,14 @@ namespace Yodlee
             return IsLogged() && userToken.IsValid;
         }
 
+        public Task Login() => Login(cobrandLogin, cobrandPassword);
+
         public async Task Login(string login, string password, string local = "en_US")
         {
+            if (string.IsNullOrEmpty(login) || string.IsNullOrEmpty(password))
+            {
+                throw new InvalidOperationException("Cobrand login/password cannot be null or empty");
+            }
 
             var response = await yapi.Post<dynamic>("cobrand/login", new
             {
