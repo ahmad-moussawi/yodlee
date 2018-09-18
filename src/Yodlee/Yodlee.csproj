@@ -6,6 +6,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="Yapi" Version="0.1.1-pre-*" />
+    <PackageReference Include="Yapi" Version="0.1.1-pre-27" />
   </ItemGroup>
 </Project>

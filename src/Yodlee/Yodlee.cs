@@ -50,52 +50,13 @@ namespace Yodlee
         {
             this.cobrandName = cobrandName;
 
-            var config = new Config();
+            yapi = new Yapi.Client(BASE_URL);
 
-            config.OnBeforeSend = async (req, c) =>
-            {
-
-                if (new[] { "POST", "PUT" }.Contains(req.Method.ToString()))
-                {
-                    req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                }
-
-                if (Debug)
-                {
-                    Console.WriteLine($"{req.Method} {req.RequestUri}");
-
-                    if (req.Headers != null)
-                    {
-                        foreach (var header in req.Headers)
-                        {
-                            Console.WriteLine(
-                                $"{header.Key}: {string.Join(" ", header.Value)}"
-                            );
-                        }
-                    }
-
-                    if (req.Content?.Headers != null)
-                    {
-                        foreach (var header in req.Content.Headers)
-                        {
-                            Console.WriteLine(
-                                $"{header.Key}: {string.Join(" ", header.Value)}"
-                            );
-                        }
-                    }
-
-                    if (req.Content != null)
-                    {
-                        Console.WriteLine(await req.Content.ReadAsStringAsync());
-                    }
-                }
-
-            };
-
-            yapi = new Yapi.Client(BASE_URL, config);
+            yapi.Debug = Debug;
 
             yapi.HeadersCommon["Api-Version"] = new[] { API_VERSION };
             yapi.HeadersCommon["Cobrand-Name"] = new[] { cobrandName };
+            yapi.HeadersCommon["Content-Type"] = new[] { "application/json" };
 
         }
 
@@ -137,25 +98,22 @@ namespace Yodlee
                 }
             });
 
-            if (response.IsSuccess)
+            response.Then(json =>
             {
-                var content = response.Json();
-
-                cobrandToken.Value = content.session.cobSession;
+                cobrandToken.Value = json.session.cobSession;
 
                 cobrandToken.ExpiresAt = DateTime.UtcNow.AddMinutes(COBRAND_SESSION_DURATION);
 
-                YodleeAppId = content.applicationId;
-
-                Console.WriteLine(YodleeAppId);
+                YodleeAppId = json.applicationId;
 
                 yapi.HeadersCommon["Authorization"] = new[] { AuthorizationHeader };
-
-                return;
-            }
-
-
-            throw new InvalidOperationException("Cobrand login failed", new Exception(response.Raw()));
+            })
+            .Catch(err =>
+            {
+                throw new InvalidOperationException(
+                    "Cobrand login failed", new Exception(response.Raw())
+                );
+            });
 
         }
 
@@ -179,20 +137,18 @@ namespace Yodlee
 
             var response = await yapi.Post<dynamic>("user/login", payload);
 
-            if (response.IsSuccess)
+            response.Then(json =>
             {
-                var content = response.Json();
-
-                userToken.Value = content.user.session.userSession;
+                userToken.Value = json.user.session.userSession;
 
                 userToken.ExpiresAt = DateTime.UtcNow.AddMinutes(USER_SESSION_DURATION);
 
                 yapi.HeadersCommon["Authorization"] = new[] { AuthorizationHeader };
 
-                return;
-            }
-
-            throw new InvalidOperationException("User login failed", new Exception(response.Raw()));
+            }).Catch(err =>
+            {
+                throw new InvalidOperationException("User login failed", new Exception(response.Raw()));
+            });
         }
 
         public async Task<Response<List<Account>>> Accounts(object query = null)
@@ -243,7 +199,7 @@ namespace Yodlee
             return await yapi.Get<List<Transaction>>("transactions", query, config);
         }
 
-        public async Task<Response<dynamic>> AccessTokens(string appIds)
+        public async Task<Response<dynamic>> AccessTokens()
         {
             var config = new Config();
 
@@ -253,9 +209,9 @@ namespace Yodlee
                 return encode(ob.user.accessTokens[0]);
             });
 
-            return await yapi.Get<dynamic>("/user/accessTokens", new
+            return await yapi.Get<dynamic>("user/accessTokens", new
             {
-                appIds
+                appIds = "10003600"
             }, config);
 
         }

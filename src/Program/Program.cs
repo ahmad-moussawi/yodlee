@@ -27,14 +27,16 @@ namespace Program
 
             await yodlee.LoginUser(config.UserLogin, config.UserPassword);
 
-            var accounts = (await yodlee.Accounts()).Json();
+            // var accounts = (await yodlee.Accounts()).Json();
 
-            var transactions = (await yodlee.Transactions(accounts[0].Id, new DateTime(2007, 1, 1), new DateTime(2018, 1, 1))).Json();
+            // var transactions = (await yodlee.Transactions(accounts[0].Id, new DateTime(2007, 1, 1), new DateTime(2018, 1, 1))).Json();
+
+            var tokens = await yodlee.AccessTokens();
+
+            Console.WriteLine(tokens.Raw());
 
 
-
-
-            Console.WriteLine(JsonConvert.SerializeObject(transactions));
+            // Console.WriteLine(JsonConvert.SerializeObject(transactions));
 
         }
     }
