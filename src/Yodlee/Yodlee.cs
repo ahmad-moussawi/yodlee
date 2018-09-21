@@ -164,7 +164,7 @@ namespace Yodlee
         {
             var config = new Config();
 
-            config.ResponseTransformers.Add(content =>
+            config.ResponseTransformers.Add((content, response) =>
             {
                 if (content == "{}") return "[]";
                 return traverse(content, "account");
@@ -199,7 +199,7 @@ namespace Yodlee
 
             var config = new Config();
 
-            config.ResponseTransformers.Add(content =>
+            config.ResponseTransformers.Add((content, response) =>
             {
                 if (content == "{}") return "[]";
                 return traverse(content, "transaction");
@@ -212,7 +212,7 @@ namespace Yodlee
         {
             var config = new Config();
 
-            config.ResponseTransformers.Add(content =>
+            config.ResponseTransformers.Add((content, response) =>
             {
                 var ob = decode<dynamic>(content);
                 return encode(ob.user.accessTokens[0]);
@@ -231,16 +231,21 @@ namespace Yodlee
 
             var config = new Config();
 
-            config.ResponseTransformers.Add(content =>
+            config.ResponseTransformers.Add((content, response) =>
             {
-                var r = decode<dynamic>(content);
-                return (string)r.finappAuthenticationInfos.finappURL;
+                if (response.IsSuccessStatusCode)
+                {
+                    var r = decode<dynamic>(content);
+                    return "https://node.developer.yodlee.com" + (string)r.finappAuthenticationInfos[0].finappURL;
+                }
+
+                return content;
             });
 
             config.Data = new
             {
                 app = FINAPP_ID,
-                rSession = userToken.Value,
+                rsession = userToken.Value,
                 token = accessToken,
                 redirectReq = "false",
                 extraParams = $"callback={callbackUrl}"
@@ -271,7 +276,7 @@ namespace Yodlee
 
             var config = new Config();
 
-            config.ResponseTransformers.Add(content => traverse(content, "user"));
+            config.ResponseTransformers.Add((content, r) => traverse(content, "user"));
 
             var response = await yapi.Post<User>("user/register", data, config);
 

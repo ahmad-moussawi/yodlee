@@ -37,7 +37,7 @@ namespace Program
             Console.WriteLine(tokens.Json().Value);
             Console.WriteLine(yodlee.userToken.Value);
 
-            var fastlinkUrl = await yodlee.FastLinkUrl("", "http://localhost:5000");
+            var fastlinkUrl = await yodlee.FastLinkUrl(tokens.Json().Value, "http://localhost:5000");
 
             Console.WriteLine(fastlinkUrl.Raw());
 
