@@ -15,7 +15,26 @@ namespace Yodlee
     {
         public const int COBRAND_SESSION_DURATION = 100;
         public const int USER_SESSION_DURATION = 100;
-        public const string BASE_URL = "https://developer.api.yodlee.com/ysl/";
+        public bool IsSandbox { get; set; } = true;
+        public const string SANDBOX_BASE_URL = "https://developer.api.yodlee.com/ysl/";
+        public const string PRODUCTION_BASE_URL = "https://api.yodlee.com/ysl/";
+        public const string SANDBOX_IFRAME_URL = "https://node.developer.yodlee.com";
+        public const string PRODUCTION_IFRAME_URL = "https://node.yodlee.com";
+        public string BaseUrl
+        {
+            get
+            {
+                return IsSandbox ? SANDBOX_BASE_URL : PRODUCTION_BASE_URL;
+            }
+        }
+        public string IFrameUrl
+        {
+            get
+            {
+                return IsSandbox ? SANDBOX_IFRAME_URL : PRODUCTION_IFRAME_URL;
+            }
+        }
+
         public const int TIMEOUT = 30000;
         public const string API_VERSION = "1.1";
         public const string FINAPP_ID = "10003600";
@@ -61,7 +80,7 @@ namespace Yodlee
         {
             this.cobrandName = cobrandName;
 
-            yapi = new Yapi.Client(BASE_URL);
+            yapi = new Yapi.Client(BaseUrl);
 
             yapi.Debug = Debug;
 
@@ -227,7 +246,7 @@ namespace Yodlee
 
         public async Task<Response<string>> FastLinkUrl(string accessToken, string callbackUrl)
         {
-            const string url = "https://node.developer.yodlee.com/authenticate/restserver/";
+            string url = IFrameUrl + "/authenticate/restserver/";
 
             var config = new Config();
 
@@ -236,7 +255,7 @@ namespace Yodlee
                 if (response.IsSuccessStatusCode)
                 {
                     var r = decode<dynamic>(content);
-                    return "https://node.developer.yodlee.com" + (string)r.finappAuthenticationInfos[0].finappURL;
+                    return IFrameUrl + (string)r.finappAuthenticationInfos[0].finappURL;
                 }
 
                 return content;
