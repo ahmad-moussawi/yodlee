@@ -18,7 +18,17 @@ namespace Yodlee
         public const string BASE_URL = "https://developer.api.yodlee.com/ysl/";
         public const int TIMEOUT = 30000;
         public const string API_VERSION = "1.1";
-        public bool Debug { get; set; } = false;
+        public const string FINAPP_ID = "10003600";
+        private bool _debug = false;
+        public bool Debug
+        {
+            get => _debug;
+            set
+            {
+                _debug = value;
+                yapi.Debug = value;
+            }
+        }
         public string YodleeAppId { get; set; }
         public Token cobrandToken = new Token();
         public Token userToken = new Token();
@@ -42,6 +52,7 @@ namespace Yodlee
         }
 
         public Client yapi;
+
         private readonly string cobrandName;
         private readonly string cobrandLogin;
         private readonly string cobrandPassword;
@@ -56,8 +67,6 @@ namespace Yodlee
 
             yapi.HeadersCommon["Api-Version"] = new[] { API_VERSION };
             yapi.HeadersCommon["Cobrand-Name"] = new[] { cobrandName };
-            yapi.HeadersCommon["Content-Type"] = new[] { "application/json" };
-
         }
 
         public YodleeApi(
@@ -199,7 +208,7 @@ namespace Yodlee
             return await yapi.Get<List<Transaction>>("transactions", query, config);
         }
 
-        public async Task<Response<dynamic>> AccessTokens()
+        public async Task<Response<FastlinkAccessToken>> FastLinkAccessToken()
         {
             var config = new Config();
 
@@ -209,11 +218,35 @@ namespace Yodlee
                 return encode(ob.user.accessTokens[0]);
             });
 
-            return await yapi.Get<dynamic>("user/accessTokens", new
+            return await yapi.Get<FastlinkAccessToken>("user/accessTokens", new
             {
-                appIds = "10003600"
+                appIds = FINAPP_ID
             }, config);
 
+        }
+
+        public async Task<Response<string>> FastLinkUrl(string accessToken, string callbackUrl)
+        {
+            const string url = "https://node.developer.yodlee.com/authenticate/restserver/";
+
+            var config = new Config();
+
+            config.ResponseTransformers.Add(content =>
+            {
+                var r = decode<dynamic>(content);
+                return (string)r.finappAuthenticationInfos.finappURL;
+            });
+
+            config.Data = new
+            {
+                app = FINAPP_ID,
+                rSession = userToken.Value,
+                token = accessToken,
+                redirectReq = "false",
+                extraParams = $"callback={callbackUrl}"
+            };
+
+            return await yapi.Send<string>("post", url, config, isJson: false, ignoreDefaultHeaders: true);
         }
 
         public async Task<Response<User>> CreateUser(
